@@ -1,36 +1,77 @@
+import { useCallback, useEffect, useState } from "react";
+
+import { socket } from "./socket";
+
 import "./App.css";
 
-import { useState } from "react";
-
-import reactLogo from "./assets/react.svg";
+enum GameState {
+  Menu,
+  Queueing,
+  Game,
+}
 
 function App() {
-  const [count, setCount] = useState(0);
+  const [gameState, setGameState] = useState<GameState>(GameState.Menu);
+  const [isConnected, setIsConnected] = useState(socket.connected);
 
-  return (
-    <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </div>
-  );
+  useEffect(() => {
+    function onConnect() {
+      setIsConnected(true);
+    }
+
+    function onDisconnect() {
+      setIsConnected(false);
+    }
+
+    function onHello(data: any) {
+      console.log("hello received");
+      console.log(data);
+    }
+
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+    socket.on("hello from server", onHello);
+
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+      socket.off("hello from server", onHello);
+    };
+  }, []);
+
+  const handleQueue = useCallback(() => {
+    setGameState(GameState.Queueing);
+    socket.emit("queue", { name: "test" });
+  }, []);
+
+  const renderGameState = useCallback(() => {
+    switch (gameState) {
+      case GameState.Menu:
+        return (
+          <>
+            <h1>improv hero</h1>
+            <button onClick={handleQueue}>queue</button>
+          </>
+        );
+      case GameState.Queueing:
+        return (
+          <>
+            <h1>improv hero</h1>
+            <h2>queueing</h2>
+          </>
+        );
+      case GameState.Game:
+        return (
+          <>
+            <h2>gaming</h2>
+          </>
+        );
+      default:
+        return "oops";
+    }
+  }, [gameState]);
+
+  return <div className="App">{renderGameState()}</div>;
 }
 
 export default App;
