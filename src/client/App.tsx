@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { GameState, MatchFoundEvent, ServerAckEvent } from "./models";
+import { PageState, MatchFoundEvent, ServerAckEvent } from "./models";
 import { socket } from "./socket";
-
-import "./App.css";
 import { Menu } from "./components/menu";
 import { Queue } from "./components/queue";
 import { Game } from "./components/game";
 
+import "./App.css";
+
 function App() {
-  const [gameState, setGameState] = useState<GameState>(GameState.Menu);
+  const [pageState, setPageState] = useState<PageState>(PageState.Menu);
   const [myID, setMyID] = useState<string>("");
   const [opponentID, setOpponentID] = useState<string>("");
 
@@ -24,7 +24,7 @@ function App() {
       console.log("match found received");
       console.log(data);
       setOpponentID(data.opponentID);
-      setGameState(GameState.Game);
+      setPageState(PageState.Game);
     }
 
     socket.on("server-ack", handleServerAck);
@@ -37,17 +37,17 @@ function App() {
   }, []);
 
   const handleQueue = useCallback(() => {
-    setGameState(GameState.Queueing);
+    setPageState(PageState.Queueing);
     socket.emit("start-queue");
   }, []);
 
-  const renderGameState = useCallback(() => {
-    switch (gameState) {
-      case GameState.Menu:
+  const renderPageState = useCallback(() => {
+    switch (pageState) {
+      case PageState.Menu:
         return <Menu myID={myID} handleQueue={handleQueue} />;
-      case GameState.Queueing:
+      case PageState.Queueing:
         return <Queue myID={myID} />;
-      case GameState.Game:
+      case PageState.Game:
         if (myID && opponentID) {
           return <Game myID={myID} opponentID={opponentID} />;
         } else {
@@ -56,9 +56,9 @@ function App() {
       default:
         return "oops";
     }
-  }, [gameState, handleQueue, myID, opponentID]);
+  }, [pageState, handleQueue, myID, opponentID]);
 
-  return <div className="App">{renderGameState()}</div>;
+  return <div className="App">{renderPageState()}</div>;
 }
 
 export default App;
