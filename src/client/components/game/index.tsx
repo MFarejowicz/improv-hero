@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { socket } from "../../socket";
 import { StartingPlayerEvent, GameStateEvent, HealthStateEvent } from "../../models";
+import { useSFX } from "../../hooks/use-sfx";
+import { useKeyPress } from "../../hooks/use-key-press";
 
 // ENSURE THIS STAYS IN SYNC with server/main GameState
 enum GameState {
@@ -22,6 +24,13 @@ export function Game({ myID, opponentID }: Props) {
   const [firstPlayer, setFirstPlayer] = useState<string>("");
   const [myHP, setMyHP] = useState<number>(100);
   const [opponentHP, setOpponentHP] = useState<number>(100);
+  const playSound = useSFX();
+  useKeyPress("s", () => playSound("piano-a"));
+  useKeyPress("d", () => playSound("piano-b"));
+  useKeyPress("f", () => playSound("piano-c"));
+  useKeyPress("j", () => playSound("piano-d"));
+  useKeyPress("k", () => playSound("piano-e"));
+  useKeyPress("l", () => playSound("piano-f"));
 
   useEffect(() => {
     function handleStartingPlayer(data: StartingPlayerEvent) {
