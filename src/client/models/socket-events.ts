@@ -12,5 +12,9 @@ export interface StartingPlayerEvent {
 }
 
 export interface GameStateEvent {
-  state: string;
+  state: number;
+}
+
+export interface HealthStateEvent {
+  [id: string]: number;
 }
