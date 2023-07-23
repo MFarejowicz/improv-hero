@@ -54,7 +54,7 @@ function App() {
           return "something went wrong";
         }
       default:
-        return "oops";
+        return "something went wrong";
     }
   }, [pageState, handleQueue, myID, opponentID]);
 

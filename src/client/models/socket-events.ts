@@ -18,3 +18,7 @@ export interface GameStateEvent {
 export interface HealthStateEvent {
   [id: string]: number;
 }
+
+export interface ReceiveJamEvent {
+  jam: Note[];
+}

@@ -2,6 +2,7 @@ import express from "express";
 import http from "http";
 import { Server, Socket } from "socket.io";
 import ViteExpress from "vite-express";
+import { Game } from "./game";
 
 const app = express();
 const server = http.createServer(app);
@@ -10,6 +11,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const queue: Socket[] = [];
+const games: Record<string, Game> = {};
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -23,18 +25,25 @@ function getRoomID(player1: Socket, player2: Socket) {
     .join("-");
 }
 
-// ENSURE THIS STAYS IN SYNC with client/components/game GameState
+// ENSURE THIS STAYS IN SYNC with client/models/game GameState
 enum GameState {
   Start,
   FirstPlayer,
+  BeforeImprov,
   Improv,
+  BeforeAwaitImprov,
   AwaitImprov,
+  BeforeReplay,
   Replay,
+  BeforeAwaitReplay,
   AwaitReplay,
   Results,
 }
 
 async function handleGame(roomID: string, player1: Socket, player2: Socket) {
+  const game = new Game(roomID, player1, player2);
+  games[roomID] = game;
+
   // set each player's starting health
   player1.data.health = 100;
   player2.data.health = 100;
@@ -47,14 +56,27 @@ async function handleGame(roomID: string, player1: Socket, player2: Socket) {
   io.to(roomID).emit("starting-player", { startingPlayer: improvPlayer.id });
 
   await delay(2_000);
-  // let's get this working once before we swap roles and repeat
+
   while (player1.data.health > 0 && player2.data.health > 0) {
+    improvPlayer.emit("game-state", { state: GameState.BeforeImprov });
+    replayPlayer.emit("game-state", { state: GameState.BeforeAwaitImprov });
+    await delay(1_000);
+
     // improv player jam
     // replay player wait
     improvPlayer.emit("game-state", { state: GameState.Improv });
     replayPlayer.emit("game-state", { state: GameState.AwaitImprov });
 
     await delay(10_000);
+
+    improvPlayer.emit("game-state", { state: GameState.BeforeAwaitReplay });
+    replayPlayer.emit("game-state", { state: GameState.BeforeReplay });
+
+    await delay(1_000);
+
+    replayPlayer.emit("receive-jam", { jam: game.currentJam });
+
+    await delay(1_000);
 
     // improv player wait
     // replay player jam
@@ -104,12 +126,23 @@ io.on("connection", (socket) => {
       opponent.emit("match-found", { roomID, opponentID: socket.id });
       // add both sockets to a shared room, which all future events can go to
       socket.join(roomID);
+      socket.data.matchRoom = roomID;
       opponent.join(roomID);
+      opponent.data.matchRoom = roomID;
       // allow some time for switching to game page
-      delay(500);
+      await delay(500);
       handleGame(roomID, socket, opponent);
     } else {
       queue.push(socket);
+    }
+  });
+
+  socket.on("submit-jam", (data) => {
+    const game = games[socket.data.matchRoom];
+    if (game) {
+      game.currentJam = data.jam;
+    } else {
+      console.log("something went wrong");
     }
   });
 });
