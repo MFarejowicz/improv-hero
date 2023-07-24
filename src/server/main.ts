@@ -2,6 +2,8 @@ import express from "express";
 import http from "http";
 import { Server, Socket } from "socket.io";
 import ViteExpress from "vite-express";
+import "dotenv/config";
+
 import { calculateHitTiming } from "./game";
 // import { Game } from "./game";
 
@@ -151,7 +153,7 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3000, () => {
+server.listen(process.env.PORT || 3000, () => {
   console.log("listening on *:3000");
 });
 
