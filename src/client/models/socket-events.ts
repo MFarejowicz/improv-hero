@@ -1,3 +1,5 @@
+import { Note } from "./game";
+
 export interface ServerAckEvent {
   id: string;
 }
@@ -19,6 +21,14 @@ export interface HealthStateEvent {
   [id: string]: number;
 }
 
-export interface ReceiveJamEvent {
-  jam: Note[];
+export interface SendImprovEvent {
+  test: string;
+}
+
+export interface ReceiveImprovEvent {
+  improv: Note[];
+}
+
+export interface SendReplayEvent {
+  test: string;
 }

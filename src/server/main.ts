@@ -2,7 +2,7 @@ import express from "express";
 import http from "http";
 import { Server, Socket } from "socket.io";
 import ViteExpress from "vite-express";
-import { Game } from "./game";
+// import { Game } from "./game";
 
 const app = express();
 const server = http.createServer(app);
@@ -11,7 +11,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const queue: Socket[] = [];
-const games: Record<string, Game> = {};
+// const games: Record<string, Game> = {};
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -37,13 +37,11 @@ enum GameState {
   Replay,
   BeforeAwaitReplay,
   AwaitReplay,
-  Results,
+  RoundResults,
+  GameResults,
 }
 
 async function handleGame(roomID: string, player1: Socket, player2: Socket) {
-  const game = new Game(roomID, player1, player2);
-  games[roomID] = game;
-
   // set each player's starting health
   player1.data.health = 100;
   player2.data.health = 100;
@@ -58,33 +56,47 @@ async function handleGame(roomID: string, player1: Socket, player2: Socket) {
   await delay(2_000);
 
   while (player1.data.health > 0 && player2.data.health > 0) {
+    // brief break before the improv players improvs
     improvPlayer.emit("game-state", { state: GameState.BeforeImprov });
     replayPlayer.emit("game-state", { state: GameState.BeforeAwaitImprov });
     await delay(1_000);
 
-    // improv player jam
+    // improv player go
     // replay player wait
     improvPlayer.emit("game-state", { state: GameState.Improv });
     replayPlayer.emit("game-state", { state: GameState.AwaitImprov });
 
     await delay(10_000);
 
+    // ask the improv player for their improv, then send it to the replay player
+    const improv = await improvPlayer.emitWithAck("send-improv", { test: "test" });
+    console.log(improv);
+    replayPlayer.emit("receive-improv", { improv });
+
+    // brief break before the replay player has to reply
     improvPlayer.emit("game-state", { state: GameState.BeforeAwaitReplay });
     replayPlayer.emit("game-state", { state: GameState.BeforeReplay });
 
-    await delay(1_000);
-
-    replayPlayer.emit("receive-jam", { jam: game.currentJam });
-
-    await delay(1_000);
+    await delay(2_000);
 
     // improv player wait
-    // replay player jam
+    // replay player go
     improvPlayer.emit("game-state", { state: GameState.AwaitReplay });
     replayPlayer.emit("game-state", { state: GameState.Replay });
 
     await delay(10_000);
 
+    // ask the replay player for their replay
+    const replay = await replayPlayer.emitWithAck("send-replay", { test: "test" });
+    console.log(replay);
+
+    // TODO: score
+
+    // round results screen
+    improvPlayer.emit("game-state", { state: GameState.RoundResults });
+    replayPlayer.emit("game-state", { state: GameState.RoundResults });
+
+    // TODO: change these random numbers with the scored updates
     const randomDamage = Math.floor(Math.random() * 80 + 50);
     replayPlayer.data.health -= randomDamage;
 
@@ -99,7 +111,7 @@ async function handleGame(roomID: string, player1: Socket, player2: Socket) {
     [improvPlayer, replayPlayer] = [replayPlayer, improvPlayer];
   }
 
-  io.to(roomID).emit("game-state", { state: GameState.Results });
+  io.to(roomID).emit("game-state", { state: GameState.GameResults });
 }
 
 app.get("/hello", (_, res) => {
@@ -134,15 +146,6 @@ io.on("connection", (socket) => {
       handleGame(roomID, socket, opponent);
     } else {
       queue.push(socket);
-    }
-  });
-
-  socket.on("submit-jam", (data) => {
-    const game = games[socket.data.matchRoom];
-    if (game) {
-      game.currentJam = data.jam;
-    } else {
-      console.log("something went wrong");
     }
   });
 });

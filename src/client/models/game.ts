@@ -16,7 +16,8 @@ export enum GameState {
   Replay,
   BeforeAwaitReplay,
   AwaitReplay,
-  Results,
+  RoundResults,
+  GameResults,
 }
 
 export interface Note {
