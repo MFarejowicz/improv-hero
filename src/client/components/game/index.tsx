@@ -20,15 +20,24 @@ interface Props {
 
 export function Game({ myID, opponentID }: Props) {
   const [gameState, setGameState] = useState<GameState>(GameState.Start);
+
   const [firstPlayer, setFirstPlayer] = useState<string>("");
+
   const [myHP, setMyHP] = useState<number>(100);
   const [opponentHP, setOpponentHP] = useState<number>(100);
+
+  const playSound = useSFX();
+
   const improv = useRef<Note[]>([]);
   const improvStart = useRef(new Date());
-  const playSound = useSFX();
+
   const [oppImprovToReplay, setOppImprovToReplay] = useState<Note[]>([]);
+
   const replay = useRef<Note[]>([]);
   const replayStart = useRef(new Date());
+
+  const [isActive, setIsActive] = useState(false);
+  const [time, setTime] = useState(0);
 
   const recordNote = useCallback(
     (sound: string) => {
@@ -58,6 +67,8 @@ export function Game({ myID, opponentID }: Props) {
     [playSound, recordNote]
   );
 
+  // handle key presses
+  // TODO: probably disable when not your turn
   useKeyPress("s", () => playNote("piano-a"));
   useKeyPress("d", () => playNote("piano-b"));
   useKeyPress("f", () => playNote("piano-c"));
@@ -65,6 +76,7 @@ export function Game({ myID, opponentID }: Props) {
   useKeyPress("k", () => playNote("piano-e"));
   useKeyPress("l", () => playNote("piano-f"));
 
+  // handle socket stuff
   useEffect(() => {
     function handleStartingPlayer(data: StartingPlayerEvent) {
       // console.log("starting player received");
@@ -80,11 +92,15 @@ export function Game({ myID, opponentID }: Props) {
       if (data.state === GameState.Improv) {
         improv.current = [];
         improvStart.current = new Date();
+        setTime(0);
+        setIsActive(true);
       }
 
       if (data.state === GameState.Replay) {
         replay.current = [];
         replayStart.current = new Date();
+        setTime(0);
+        setIsActive(true);
       }
     }
 
@@ -105,6 +121,7 @@ export function Game({ myID, opponentID }: Props) {
       // console.log("send improv received");
       // console.log(data);
       ack(improv.current);
+      setIsActive(false);
     }
 
     function handleReceiveImprov(data: ReceiveImprovEvent) {
@@ -116,6 +133,7 @@ export function Game({ myID, opponentID }: Props) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function handleSendReplay(data: SendReplayEvent, ack: (arg: any) => void) {
       ack(replay.current);
+      setIsActive(false);
     }
 
     socket.on("starting-player", handleStartingPlayer);
@@ -135,6 +153,23 @@ export function Game({ myID, opponentID }: Props) {
     };
   }, [myID]);
 
+  // handle on screen timer
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    if (isActive) {
+      interval = setInterval(() => {
+        setTime((time) => time + 10);
+      }, 10);
+    } else {
+      if (interval) clearInterval(interval);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isActive]);
+
+  // handle visuals
   const renderGameState = useCallback(() => {
     switch (gameState) {
       case GameState.Start:
@@ -144,7 +179,12 @@ export function Game({ myID, opponentID }: Props) {
       case GameState.BeforeImprov:
         return <div>{"get ready to improv!"}</div>;
       case GameState.Improv:
-        return <div>{"you are now improv-ing"}</div>;
+        return (
+          <div>
+            <div>{"you are now improv-ing"}</div>
+            <div>{`time: ${time}`}</div>
+          </div>
+        );
       case GameState.BeforeAwaitImprov:
         return <div>{"your opponent is about to improv"}</div>;
       case GameState.AwaitImprov:
@@ -161,6 +201,7 @@ export function Game({ myID, opponentID }: Props) {
             <div>{"replay your opponent's improv"}</div>
             <div>{"the improv looks like: "}</div>
             <div>{JSON.stringify(oppImprovToReplay)}</div>
+            <div>{`time: ${time}`}</div>
           </div>
         );
       case GameState.GameResults:
@@ -175,7 +216,7 @@ export function Game({ myID, opponentID }: Props) {
       default:
         break;
     }
-  }, [firstPlayer, gameState, myHP, myID, oppImprovToReplay, opponentHP]);
+  }, [firstPlayer, gameState, myHP, myID, oppImprovToReplay, opponentHP, time]);
 
   return (
     <>
@@ -187,6 +228,7 @@ export function Game({ myID, opponentID }: Props) {
       <h3>
         opponent ID: {opponentID}, opponent HP: {opponentHP}
       </h3>
+      <br />
       <br />
       {renderGameState()}
     </>

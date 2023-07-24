@@ -2,6 +2,7 @@ import express from "express";
 import http from "http";
 import { Server, Socket } from "socket.io";
 import ViteExpress from "vite-express";
+import { calculateHitTiming } from "./game";
 // import { Game } from "./game";
 
 const app = express();
@@ -70,7 +71,6 @@ async function handleGame(roomID: string, player1: Socket, player2: Socket) {
 
     // ask the improv player for their improv, then send it to the replay player
     const improv = await improvPlayer.emitWithAck("send-improv", { test: "test" });
-    console.log(improv);
     replayPlayer.emit("receive-improv", { improv });
 
     // brief break before the replay player has to reply
@@ -88,17 +88,18 @@ async function handleGame(roomID: string, player1: Socket, player2: Socket) {
 
     // ask the replay player for their replay
     const replay = await replayPlayer.emitWithAck("send-replay", { test: "test" });
-    console.log(replay);
 
     // TODO: score
+
+    const score = calculateHitTiming(improv, replay);
 
     // round results screen
     improvPlayer.emit("game-state", { state: GameState.RoundResults });
     replayPlayer.emit("game-state", { state: GameState.RoundResults });
 
     // TODO: change these random numbers with the scored updates
-    const randomDamage = Math.floor(Math.random() * 80 + 50);
-    replayPlayer.data.health -= randomDamage;
+    const damage = 100 - score;
+    replayPlayer.data.health -= damage;
 
     const healthData: Record<string, number> = {};
     healthData[improvPlayer.id] = improvPlayer.data.health;
