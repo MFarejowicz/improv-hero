@@ -15,10 +15,12 @@ import { useKeyPress } from "../../hooks/use-key-press";
 
 interface Props {
   myID: string;
+  myName: string;
   opponentID: string;
+  opponentName: string;
 }
 
-export function Game({ myID, opponentID }: Props) {
+export function Game({ myID, myName, opponentID, opponentName }: Props) {
   const [gameState, setGameState] = useState<GameState>(GameState.Start);
 
   const [firstPlayer, setFirstPlayer] = useState<string>("");
@@ -219,18 +221,18 @@ export function Game({ myID, opponentID }: Props) {
   }, [firstPlayer, gameState, myHP, myID, oppImprovToReplay, opponentHP, time]);
 
   return (
-    <>
+    <div>
       <h1>improv hero</h1>
       <h2>gaming</h2>
       <h3>
-        my ID: {myID}, my HP: {myHP}
+        your name: {myName}, your HP: {myHP}
       </h3>
       <h3>
-        opponent ID: {opponentID}, opponent HP: {opponentHP}
+        opponent name: {opponentName}, opponent HP: {opponentHP}
       </h3>
       <br />
       <br />
       {renderGameState()}
-    </>
+    </div>
   );
 }

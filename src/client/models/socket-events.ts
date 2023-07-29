@@ -7,6 +7,7 @@ export interface ServerAckEvent {
 export interface MatchFoundEvent {
   roomID: string;
   opponentID: string;
+  opponentName: string;
 }
 
 export interface StartingPlayerEvent {

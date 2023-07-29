@@ -63,6 +63,7 @@ export function useSFX() {
   // use those params to dynamically play any sound
   const play = useCallback(
     (name: string) => {
+      console.log(`playing note ${name}`);
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffers.current[name].buffer;
       const gainNode = audioContext.createGain();

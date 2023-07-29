@@ -13,7 +13,9 @@ const server = http.createServer(app);
 // const io = new Server(server, { cors: { origin: "http://localhost:3000" } });
 const io = new Server(server);
 
-const queue: Socket[] = [];
+type QueueData = { socket: Socket; name: string };
+
+const queue: QueueData[] = [];
 // const games: Record<string, Game> = {};
 
 function delay(ms: number) {
@@ -126,29 +128,29 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("user disconnected");
-    if (queue.includes(socket)) {
+    if (queue.some((item) => item.socket === socket)) {
       queue.shift();
     }
   });
 
-  socket.on("start-queue", async () => {
+  socket.on("start-queue", async (name: string) => {
     console.log("queue received");
     const opponent = queue.shift();
     if (opponent) {
-      const roomID = getRoomID(socket, opponent);
+      const roomID = getRoomID(socket, opponent.socket);
       // let both sockets know the match has been found
-      socket.emit("match-found", { roomID, opponentID: opponent.id });
-      opponent.emit("match-found", { roomID, opponentID: socket.id });
+      socket.emit("match-found", { roomID, opponentID: opponent.socket.id, opponentName: opponent.name });
+      opponent.socket.emit("match-found", { roomID, opponentID: socket.id, opponentName: name });
       // add both sockets to a shared room, which all future events can go to
       socket.join(roomID);
       socket.data.matchRoom = roomID;
-      opponent.join(roomID);
-      opponent.data.matchRoom = roomID;
+      opponent.socket.join(roomID);
+      opponent.socket.data.matchRoom = roomID;
       // allow some time for switching to game page
       await delay(500);
-      handleGame(roomID, socket, opponent);
+      handleGame(roomID, socket, opponent.socket);
     } else {
-      queue.push(socket);
+      queue.push({ socket, name });
     }
   });
 });
