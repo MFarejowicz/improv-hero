@@ -28,6 +28,9 @@ interface Props {
 export function Game({ myID, myName, opponentID, opponentName }: Props) {
   const [gameState, setGameState] = useState<GameState>(GameState.Start);
 
+  const [trackCount, setTrackCount] = useState<number>(0);
+  const [trackIndex, setTrackIndex] = useState<number>(0);
+
   const [firstPlayer, setFirstPlayer] = useState<string>("");
 
   const [myHP, setMyHP] = useState<number>(100);
@@ -84,7 +87,6 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
   useKeyPress("g", () => playNote("piano-d"));
   useKeyPress("h", () => playNote("piano-e"));
   useKeyPress("j", () => playNote("piano-f"));
-  useKeyPress(" ", () => playNote("metronome"));
 
   // handle socket stuff
   useEffect(() => {
@@ -96,8 +98,19 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
     }
 
     function handleGameState(data: GameStateEvent) {
-      // console.log("game state received");
-      // console.log(data);
+      const tracks = ['backing', 'backing2', 'backing3'];
+
+      const playBackingTrack = () => {
+        playSound(tracks[trackIndex]);
+
+        // every time a multiple of 2 for the track count is reached, we move on to the next track
+        // regardless of who improvs first
+        setTrackCount(trackCount + 1);
+        if ((trackCount + 1) % 2 === 0) {
+          setTrackIndex((trackIndex + 1) % 3);
+        }
+      }
+
       setGameState(data.state);
 
       if (data.state === GameState.Improv) {
@@ -105,11 +118,11 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
         improvStart.current = new Date();
         setTime(0);
         setIsActive(true);
-        playSound("backing");
+        playBackingTrack();
       }
 
-      if (data.state === GameState.Replay) {
-        playSound("backing");
+      if ([GameState.Replay, GameState.AwaitReplay, GameState.AwaitImprov].includes(data.state)) {
+        playBackingTrack();
       }
 
       if ([GameState.BeforeAwaitImprov, GameState.BeforeAwaitReplay].includes(data.state)) {

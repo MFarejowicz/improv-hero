@@ -7,6 +7,8 @@ import pianoE from "../assets/audio/piano-e.wav";
 import pianoF from "../assets/audio/piano-f.wav";
 import metronome from "../assets/audio/metronome.wav";
 import backing from "../assets/audio/backing.wav";
+import backing2 from "../assets/audio/backing2.wav";
+import backing3 from "../assets/audio/backing3.wav";
 
 // a universal volume, everything is hella loud for some reason
 const GAIN = 0.25;
@@ -50,6 +52,14 @@ export function useSFX() {
     },
     "backing": {
       path: backing,
+      buffer: null,
+    },
+    "backing2": {
+      path: backing2,
+      buffer: null,
+    },
+    "backing3": {
+      path: backing3,
       buffer: null,
     }
   });
