@@ -5,6 +5,8 @@ import pianoC from "../assets/audio/piano-c.wav";
 import pianoD from "../assets/audio/piano-d.wav";
 import pianoE from "../assets/audio/piano-e.wav";
 import pianoF from "../assets/audio/piano-f.wav";
+import metronome from "../assets/audio/metronome.wav";
+import backing from "../assets/audio/backing.wav";
 
 // a universal volume, everything is hella loud for some reason
 const GAIN = 0.25;
@@ -42,6 +44,14 @@ export function useSFX() {
       path: pianoF,
       buffer: null,
     },
+    "metronome": {
+      path: metronome,
+      buffer: null,
+    },
+    "backing": {
+      path: backing,
+      buffer: null,
+    }
   });
   const audioContext = useMemo(() => new window.AudioContext(), []);
 
@@ -63,7 +73,6 @@ export function useSFX() {
   // use those params to dynamically play any sound
   const play = useCallback(
     (name: string) => {
-      console.log(`playing note ${name}`);
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffers.current[name].buffer;
       const gainNode = audioContext.createGain();

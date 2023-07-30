@@ -1,0 +1,25 @@
+.metronome {
+  width: 25px;
+  height: 25px;
+  opacity: 0;
+  border-radius: 100%;
+  background-color: red;
+}
+
+.bang {
+  animation: 0.75s linear infinite bang;
+}
+
+@keyframes bang {
+  0% {
+    opacity: 1;
+  }
+
+  30% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
