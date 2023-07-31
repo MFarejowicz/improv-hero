@@ -6,3 +6,26 @@
   width: 100vw;
   height: 100vh;
 }
+
+.Header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.Header h3 {
+  text-transform: capitalize;
+}
+
+.Header .You {
+  display: flex;
+  align-items: flex-end;
+}
+
+.Header .You label {
+  font-size: 0.8em;
+}
+
+.Header .Them {
+  text-align: right;
+}

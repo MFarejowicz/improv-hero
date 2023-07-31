@@ -352,12 +352,20 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
     <div>
       <h1>improv hero</h1>
       <h2>{`tempo: ${TEMPO}`}</h2>
-      <h3>
-        your name: {myName}, your HP: {myHP}/100
-      </h3>
-      <h3>
-        opponent name: {opponentName}, opponent HP: {opponentHP}/100
-      </h3>
+      <div className="Header">
+        <div>
+          <div className="You">
+            <h3>{myName}</h3>
+            <label>(YOU)</label>
+          </div>
+          {myHP}/100 HP
+        </div>
+        vs
+        <div className="Them">
+          <h3>{opponentName}</h3>
+          {opponentHP}/100 HP
+        </div>
+      </div>
       <br />
       <Metronome metronomeRef={metronomeRef} />
       <br />
