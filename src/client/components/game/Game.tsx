@@ -10,13 +10,12 @@ import {
   GameState,
   Note,
 } from "../../models";
+import { TEMPO, ONE_BEAT } from "../../constants";
+import { useColumns } from "../../hooks/use-columns";
 import { useSFX } from "../../hooks/use-sfx";
 import { useKeyPress } from "../../hooks/use-key-press";
 import { Board } from "./Board";
 import { Metronome } from "./Metronome";
-
-const TEMPO = 80; // keep consistent with server
-const ONE_BEAT = (1000 * 60) / 80; // 80 bpm = 750ms
 
 interface Props {
   myID: string;
@@ -24,6 +23,15 @@ interface Props {
   opponentID: string;
   opponentName: string;
 }
+
+const soundToColumnMap = new Map<string, number>([
+  ["piano-a", 0],
+  ["piano-b", 1],
+  ["piano-c", 2],
+  ["piano-d", 3],
+  ["piano-e", 4],
+  ["piano-f", 5]
+]);
 
 export function Game({ myID, myName, opponentID, opponentName }: Props) {
   const [gameState, setGameState] = useState<GameState>(GameState.Start);
@@ -47,6 +55,8 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
 
   const replay = useRef<Note[]>([]);
   const replayStart = useRef(new Date());
+
+  const { columnRefs, slideOutAtColumn, slideInAtColumn } = useColumns();
 
   const [isActive, setIsActive] = useState(false);
   const [time, setTime] = useState(0);
@@ -81,12 +91,50 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
 
   // handle key presses
   // TODO: probably disable when not your turn
-  useKeyPress("s", () => playNote("piano-a"));
-  useKeyPress("d", () => playNote("piano-b"));
-  useKeyPress("f", () => playNote("piano-c"));
-  useKeyPress("g", () => playNote("piano-d"));
-  useKeyPress("h", () => playNote("piano-e"));
-  useKeyPress("j", () => playNote("piano-f"));
+  useKeyPress("s", () => {
+    playNote("piano-a");
+    slideOutAtColumn(0);
+  });
+  useKeyPress("d", () => {
+    playNote("piano-b");
+    slideOutAtColumn(1);
+  });
+  useKeyPress("f", () => {
+    playNote("piano-c");
+    slideOutAtColumn(2);
+  });
+  useKeyPress("g", () => {
+    playNote("piano-d");
+    slideOutAtColumn(3);
+  });
+  useKeyPress("h", () => {
+    playNote("piano-e");
+    slideOutAtColumn(4);
+  });
+  useKeyPress("j", () => {
+    playNote("piano-f");
+    slideOutAtColumn(5);
+  });
+
+  useEffect(() => {
+    console.log({ oppImprovToReplay, gameState })
+    if (oppImprovToReplay.length === 0 || gameState !== GameState.BeforeReplay) {
+      return;
+    }
+
+    oppImprovToReplay.forEach((note) => {
+      const column = soundToColumnMap.get(note.sound);
+      console.log({ column });
+      if (column == null) {
+        return;
+      }
+
+      // it takes 4 beats for a note to reach the bottom of the board, when the replayer should hit the note,
+      // and the BeforeReplay phase is 8 beats. therefore the offset here is 8 beats so that a note at time 0
+      // can start sliding down at time negative 4 beats. galactic brain
+      setTimeout(() => slideInAtColumn(column), (ONE_BEAT * 4) + note.time);
+    });
+  }, [oppImprovToReplay, gameState]);
 
   // handle socket stuff
   useEffect(() => {
@@ -187,6 +235,7 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
     function handleSendReplay(data: SendReplayEvent, ack: (arg: any) => void) {
       ack(replay.current);
       setIsActive(false);
+      setOppImprovToReplay([]);
     }
 
     socket.on("starting-player", handleStartingPlayer);
@@ -277,7 +326,7 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
   return (
     <div>
       <h1>improv hero</h1>
-      <h2>tempo: 80</h2>
+      <h2>{`tempo: ${TEMPO}`}</h2>
       <h3>
         your name: {myName}, your HP: {myHP}
       </h3>
@@ -287,7 +336,7 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
       <br />
       <Metronome metronomeRef={metronomeRef} />
       <br />
-      <Board />
+      <Board columnRefs={columnRefs} />
       <br />
       {renderGameState()}
     </div>

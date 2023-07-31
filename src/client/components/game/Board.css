@@ -3,27 +3,45 @@
   flex-direction: row;
 }
 
-.note-column:nth-child(1) .letter-indicator {
+.note-column:nth-child(1) > .letter-indicator {
+  background-color: #95cf92;
+}
+.note-column:nth-child(1) > .note {
   background-color: #95cf92;
 }
 
-.note-column:nth-child(2) .letter-indicator {
+.note-column:nth-child(2) > .letter-indicator {
+  background-color: #de324c;
+}
+.note-column:nth-child(2) > .note {
   background-color: #de324c;
 }
 
-.note-column:nth-child(3) .letter-indicator {
+.note-column:nth-child(3) > .letter-indicator {
+  background-color: #f8e16f;
+}
+.note-column:nth-child(3) > .note {
   background-color: #f8e16f;
 }
 
-.note-column:nth-child(4) .letter-indicator {
+.note-column:nth-child(4) > .letter-indicator {
+  background-color: #369acc;
+}
+.note-column:nth-child(4) > .note {
   background-color: #369acc;
 }
 
-.note-column:nth-child(5) .letter-indicator {
+.note-column:nth-child(5) > .letter-indicator {
+  background-color: #f4895f;
+}
+.note-column:nth-child(5) > .note {
   background-color: #f4895f;
 }
 
-.note-column:nth-child(6) .letter-indicator {
+.note-column:nth-child(6) > .letter-indicator {
+  background-color: #9656a2;
+}
+.note-column:nth-child(6) > .note {
   background-color: #9656a2;
 }
 
@@ -50,4 +68,39 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.note {
+  width: 25px;
+  height: 25px;
+  border-radius: 100%;
+  position: absolute;
+}
+
+.note.slide-up {
+  animation: 3s linear slide-up;
+}
+
+.note.slide-down {
+  animation: 3s linear slide-down;
+}
+
+@keyframes slide-up {
+  from {
+    bottom: 0%;
+  }
+
+  to {
+    bottom: 95%;
+  }
+}
+
+@keyframes slide-down {
+  from {
+    bottom: 95%;
+  }
+
+  to {
+    bottom: 0%;
+  }
 }
