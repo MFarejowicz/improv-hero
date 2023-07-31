@@ -1,0 +1,23 @@
+.Hero {
+  position: relative;
+}
+
+.Hero-bod {
+  position: absolute;
+  z-index: 1;
+}
+
+.Hero-head {
+  animation: 0.75s linear infinite head-bang;
+}
+
+@keyframes head-bang {
+  0%,
+  100% {
+    transform: translateY(-6%) translateX(-2%);
+  }
+
+  30% {
+    transform: translateY(0);
+  }
+}

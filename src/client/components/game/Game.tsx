@@ -1,19 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { socket } from "../../socket";
+
+import { ONE_BEAT, TEMPO } from "../../constants";
+import { useColumns } from "../../hooks/use-columns";
+import { useKeyPress } from "../../hooks/use-key-press";
+import { useSFX } from "../../hooks/use-sfx";
 import {
-  StartingPlayerEvent,
+  GameState,
   GameStateEvent,
   HealthStateEvent,
-  SendImprovEvent,
-  ReceiveImprovEvent,
-  SendReplayEvent,
-  GameState,
   Note,
+  ReceiveImprovEvent,
+  SendImprovEvent,
+  SendReplayEvent,
+  StartingPlayerEvent,
 } from "../../models";
-import { TEMPO, ONE_BEAT } from "../../constants";
-import { useColumns } from "../../hooks/use-columns";
-import { useSFX } from "../../hooks/use-sfx";
-import { useKeyPress } from "../../hooks/use-key-press";
+import { socket } from "../../socket";
+import { Hero } from "../Hero";
 import { Board } from "./Board";
 import { Metronome } from "./Metronome";
 
@@ -30,7 +32,7 @@ const soundToColumnMap = new Map<string, number>([
   ["piano-c", 2],
   ["piano-d", 3],
   ["piano-e", 4],
-  ["piano-f", 5]
+  ["piano-f", 5],
 ]);
 
 export function Game({ myID, myName, opponentID, opponentName }: Props) {
@@ -78,7 +80,7 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
         replay.current.push(note);
       }
     },
-    [gameState]
+    [gameState],
   );
 
   const playNote = useCallback(
@@ -86,7 +88,7 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
       playSound(note);
       recordNote(note);
     },
-    [playSound, recordNote]
+    [playSound, recordNote],
   );
 
   // handle key presses
@@ -117,7 +119,10 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
   });
 
   useEffect(() => {
-    if (oppImprovToReplay.length === 0 || gameState !== GameState.BeforeReplay) {
+    if (
+      oppImprovToReplay.length === 0 ||
+      gameState !== GameState.BeforeReplay
+    ) {
       return;
     }
 
@@ -130,7 +135,7 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
       // it takes 4 beats for a note to reach the bottom of the board, when the replayer should hit the note,
       // and the BeforeReplay phase is 8 beats. therefore the offset here is 8 beats so that a note at time 0
       // can start sliding down at time negative 4 beats. galactic brain
-      setTimeout(() => slideInAtColumn(column), (ONE_BEAT * 4) + note.time);
+      setTimeout(() => slideInAtColumn(column), ONE_BEAT * 4 + note.time);
     });
   }, [oppImprovToReplay, gameState]);
 
@@ -144,7 +149,7 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
     }
 
     function handleGameState(data: GameStateEvent) {
-      const tracks = ['backing', 'backing2', 'backing3'];
+      const tracks = ["backing", "backing2", "backing3"];
 
       const playBackingTrack = () => {
         playSound(tracks[trackIndex]);
@@ -155,7 +160,7 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
         if ((trackCount + 1) % 2 === 0) {
           setTrackIndex((trackIndex + 1) % 3);
         }
-      }
+      };
 
       setGameState(data.state);
 
@@ -167,31 +172,43 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
         playBackingTrack();
       }
 
-      if ([GameState.Replay, GameState.AwaitReplay, GameState.AwaitImprov].includes(data.state)) {
+      if (
+        [
+          GameState.Replay,
+          GameState.AwaitReplay,
+          GameState.AwaitImprov,
+        ].includes(data.state)
+      ) {
         playBackingTrack();
       }
 
-      if ([GameState.BeforeAwaitImprov, GameState.BeforeAwaitReplay].includes(data.state)) {
-        playSound('metronome');
-        const beat = setInterval(() => playSound('metronome'), ONE_BEAT);
+      if (
+        [GameState.BeforeAwaitImprov, GameState.BeforeAwaitReplay].includes(
+          data.state,
+        )
+      ) {
+        playSound("metronome");
+        const beat = setInterval(() => playSound("metronome"), ONE_BEAT);
         setTimeout(() => clearInterval(beat), ONE_BEAT * 7);
       }
 
-      if ([
-        GameState.Improv,
-        GameState.BeforeImprov,
-        GameState.BeforeAwaitImprov,
-        GameState.BeforeReplay,
-        GameState.Replay,
-        GameState.AwaitReplay,
-        GameState.BeforeAwaitReplay
-      ].includes(data.state)) {
+      if (
+        [
+          GameState.Improv,
+          GameState.BeforeImprov,
+          GameState.BeforeAwaitImprov,
+          GameState.BeforeReplay,
+          GameState.Replay,
+          GameState.AwaitReplay,
+          GameState.BeforeAwaitReplay,
+        ].includes(data.state)
+      ) {
         if (metronomeRef.current != null) {
-          metronomeRef.current.classList.add('bang');
+          metronomeRef.current.classList.add("bang");
         }
       } else {
         if (metronomeRef.current != null) {
-          metronomeRef.current.classList.remove('bang');
+          metronomeRef.current.classList.remove("bang");
         }
       }
 
@@ -319,24 +336,37 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
       default:
         break;
     }
-  }, [firstPlayer, gameState, myHP, myID, oppImprovToReplay, opponentHP, time, myName, opponentName]);
+  }, [
+    firstPlayer,
+    gameState,
+    myHP,
+    myID,
+    oppImprovToReplay,
+    opponentHP,
+    time,
+    myName,
+    opponentName,
+  ]);
 
   return (
     <div>
       <h1>improv hero</h1>
       <h2>{`tempo: ${TEMPO}`}</h2>
       <h3>
-        your name: {myName}, your HP: {myHP}
+        your name: {myName}, your HP: {myHP}/100
       </h3>
       <h3>
-        opponent name: {opponentName}, opponent HP: {opponentHP}
+        opponent name: {opponentName}, opponent HP: {opponentHP}/100
       </h3>
       <br />
       <Metronome metronomeRef={metronomeRef} />
       <br />
       <Board columnRefs={columnRefs} />
       <br />
-      {renderGameState()}
+      <div style={{ display: "flex" }}>
+        <Hero />
+        {renderGameState()}
+      </div>
     </div>
   );
 }
