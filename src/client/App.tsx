@@ -19,14 +19,14 @@ function App() {
 
   useEffect(() => {
     function handleServerAck(data: ServerAckEvent) {
-      console.log("server ack received");
-      console.log(data);
+      // console.log("server ack received");
+      // console.log(data);
       setMyID(data.id);
     }
 
     function handleMatchFound(data: MatchFoundEvent) {
-      console.log("match found received");
-      console.log(data);
+      // console.log("match found received");
+      // console.log(data);
       setOpponentID(data.opponentID);
       setOpponentName(data.opponentName);
       setPageState(PageState.Game);

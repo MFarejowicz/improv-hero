@@ -117,14 +117,12 @@ export function Game({ myID, myName, opponentID, opponentName }: Props) {
   });
 
   useEffect(() => {
-    console.log({ oppImprovToReplay, gameState })
     if (oppImprovToReplay.length === 0 || gameState !== GameState.BeforeReplay) {
       return;
     }
 
     oppImprovToReplay.forEach((note) => {
       const column = soundToColumnMap.get(note.sound);
-      console.log({ column });
       if (column == null) {
         return;
       }

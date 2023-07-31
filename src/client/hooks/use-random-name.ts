@@ -72,6 +72,5 @@ export function useRandomName(): [string, () => void] {
 const generateRandomName = (): string => {
   const adjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
   const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
-  console.log(`${adjective} ${noun}`);
   return `${adjective} ${noun}`;
 }
